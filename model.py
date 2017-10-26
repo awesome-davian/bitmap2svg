@@ -58,12 +58,13 @@ class DecoderRNN(nn.Module):
         """Samples captions for given image features (Greedy search)."""
         sampled_ids = []
         inputs = features.unsqueeze(1)
-        for i in range(20):                                      # maximum sampling length
+        for i in range(10):                                      # maximum sampling length
             hiddens, states = self.lstm(inputs, states)          # (batch_size, 1, hidden_size), 
             outputs = self.linear(hiddens.squeeze(1))            # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
             sampled_ids.append(predicted)
             inputs = self.embed(predicted)
             inputs = inputs.unsqueeze(1)                         # (batch_size, 1, embed_size)
-        sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
-        return sampled_ids.squeeze()
+        #print(sampled_ids)
+        #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
+        return sampled_ids

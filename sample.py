@@ -50,6 +50,7 @@ def main(args):
     # Prepare Image
     image = load_image(args.image, transform)
     image_tensor = to_var(image, volatile=True)
+    image_tensor = image_tensor[:,0:-1,:,:]
     
     # If use gpu
     if torch.cuda.is_available():
@@ -59,11 +60,16 @@ def main(args):
     # Generate caption from image
     feature = encoder(image_tensor)
     sampled_ids = decoder.sample(feature)
-    sampled_ids = sampled_ids.cpu().data.numpy()
+    ids_arr = []
+    for element in sampled_ids: 
+        temp = element.cpu().data.numpy()
+        ids_arr.append(int(temp))
+
+    #sampled_ids = sampled_ids.cpu().data.numpy()
     
     # Decode word_ids to words
     sampled_caption = []
-    for word_id in sampled_ids:
+    for word_id in ids_arr:
         word = vocab.idx2word[word_id]
         sampled_caption.append(word)
         if word == '<end>':
@@ -79,9 +85,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, required=True,
                         help='input image for generating caption')
-    parser.add_argument('--encoder_path', type=str, default='./models/encoder-5-8.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/encoder-5-15.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/decoder-5-8.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/decoder-5-15.pkl',
                         help='path for trained decoder')
     parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
                         help='path for vocabulary wrapper')
