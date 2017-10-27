@@ -91,7 +91,7 @@ if __name__ == '__main__':
                         help='path for trained decoder')
     parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='bitmap2svg_samples/',
+    parser.add_argument('--root_path', type=str, default='bitmap2svg_samples2/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)

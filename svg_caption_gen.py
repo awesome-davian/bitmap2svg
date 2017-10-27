@@ -31,8 +31,8 @@ def pos_classifier(pos_x, pos_y):
     return str(sector)
   
 
-path  = 'bitmap2svg_samples/svg'
-newpath ='bitmap2svg_samples/caption'
+path  = 'bitmap2_test/svg'
+newpath ='bitmap2_test/caption'
 file_list = os.listdir(path)
 
 tot_list = []
@@ -58,13 +58,15 @@ for f_list in file_list:
     sector = pos_classifier(pos_x, pos_y)
     
     radius = radius.split('.')[0]
+    radius = (str(round(float(radius)/10)*10))
+
     style = style.replace("fill: hsl(","").split('.')[0]
     
     
     attr_list.append(sector)
     attr_list.append(shape)
     attr_list.append(radius)
-    attr_list.append(style)
+    #attr_list.append(style)
     
     tot_list.append(attr_list)
     

@@ -93,7 +93,7 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=224 ,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='bitmap2svg_samples/',
+    parser.add_argument('--root_path', type=str, default='bitmap2svg_samples2/',
                         help='path for root')
     parser.add_argument('--image_dir', type=str, default='./data/resized2014' ,
                         help='directory for resized images')
