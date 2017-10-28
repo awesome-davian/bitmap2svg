@@ -8,6 +8,7 @@ from model import EncoderCNN, DecoderRNN
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
+import pickle
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
@@ -29,8 +30,11 @@ def main(args):
         transforms.Normalize((0.485, 0.456, 0.406), 
                              (0.229, 0.224, 0.225))])
     
-    # Build vocab
+    # Build vocab  
     vocab = build_vocab(args.root_path, threshold=0)
+    vocab_path = args.vocab_path
+    with open(vocab_path, 'wb') as f:
+        pickle.dump(vocab, f)
     
     # Build data loader
     data_loader = get_loader(args.root_path, vocab, 
@@ -75,8 +79,7 @@ def main(args):
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f, Perplexity: %5.4f'
                       %(epoch, args.num_epochs, i, total_step, 
                         loss.data[0], np.exp(loss.data[0]))) 
-                #print(images.size())
-                #print(features.size())
+
             # Save the models
             if (i+1) % args.save_step == 0:
                 torch.save(decoder.state_dict(), 
@@ -93,18 +96,14 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=224 ,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='bitmap2svg_samples2/',
+    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples2/',
                         help='path for root')
-    parser.add_argument('--image_dir', type=str, default='./data/resized2014' ,
-                        help='directory for resized images')
-    parser.add_argument('--caption_path', type=str,
-                        default='./data/annotations/captions_train2014.json',
-                        help='path for train annotation json file')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=5,
                         help='step size for saving trained models')
-    
+    parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl', 
+                        help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,
                         help='dimension of word embedding vectors')
