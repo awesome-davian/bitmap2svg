@@ -2,7 +2,6 @@ import torch
 import matplotlib.pyplot as plt
 import argparse
 import pickle 
-import os
 from torch.autograd import Variable 
 from torchvision import transforms 
 from data_loader import build_vocab 
@@ -16,7 +15,7 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 
 def load_image(image_path, transform):
-    image = Image.open(image_path)
+    image = Image.open(image_path).convert('RGB')
     image = image.resize([224, 224], Image.LANCZOS)
     
     if transform is not None:
@@ -32,8 +31,6 @@ def main(args):
                              (0.229, 0.224, 0.225))])
     
     # Load vocabulary wrapper
-    # Build vocab
-    #vocab = build_vocab(args.root_path, threshold=0)
     with open(args.vocab_path, 'rb') as f:
         vocab = pickle.load(f)
 
@@ -51,8 +48,7 @@ def main(args):
     # Prepare Image
     image = load_image(args.image, transform)
     image_tensor = to_var(image, volatile=True)
-    image_tensor = image_tensor[:,0:-1,:,:]
-    
+   
     # If use gpu
     if torch.cuda.is_available():
         encoder.cuda()
@@ -66,7 +62,6 @@ def main(args):
         temp = element.cpu().data.numpy()
         ids_arr.append(int(temp))
 
-    #sampled_ids = sampled_ids.cpu().data.numpy()
     
     # Decode word_ids to words
     sampled_caption = []
@@ -92,7 +87,7 @@ if __name__ == '__main__':
                         help='path for trained decoder')
     parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples2/',
+    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)
