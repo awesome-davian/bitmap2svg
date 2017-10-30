@@ -87,11 +87,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--caption_path', type=str, 
-                        default='data/bitmap2svg_samples2/caption', 
+                        default='data/bitmap2svg_samples/caption', 
                         help='path for train annotation file')
 
     parser.add_argument('--svg_path', type=str, 
-                        default='data/bitmap2svg_samples2/svg', 
+                        default='data/bitmap2svg_samples/svg', 
                         help='ath for train annotation file')
 
     args = parser.parse_args()
