@@ -1,7 +1,9 @@
+#Read Me
 
-To make samples : circle.js
+###To make samples : circle.js
 
-To run on ubuntu : makeCircle.sh
+###To run on ubuntu : makeCircle.sh
+
 
 Get going:
 
