@@ -16,7 +16,7 @@ def to_var(x, volatile=False):
 
 def load_image(image_path, transform):
     image = Image.open(image_path).convert('RGB')
-    image = image.resize([224, 224], Image.LANCZOS)
+    image = image.resize([64, 64], Image.LANCZOS)
     
     if transform is not None:
         image = transform(image).unsqueeze(0)
@@ -37,6 +37,7 @@ def main(args):
     # Build Models
     encoder = EncoderCNN(args.embed_size)
     encoder.eval()  # evaluation mode (BN uses moving mean/variance)
+
     decoder = DecoderRNN(args.embed_size, args.hidden_size, 
                          len(vocab), args.num_layers)
     

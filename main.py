@@ -5,6 +5,7 @@ import numpy as np
 import os
 from data_loader import build_vocab, get_loader
 from model import EncoderCNN, DecoderRNN 
+from model import ResNet, ResidualBlock
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
@@ -12,7 +13,7 @@ import pickle
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
-        x = x.cuda()
+        x = x.cuda(1)
     return Variable(x, volatile=volatile)
 
 def rearrange_tensor(x, batch_size, caption_size):
@@ -36,8 +37,8 @@ def main(args):
         transforms.RandomCrop(args.crop_size),
         transforms.RandomHorizontalFlip(), 
         transforms.ToTensor(), 
-        transforms.Normalize((0.485, 0.456, 0.406), 
-                             (0.229, 0.224, 0.225))])
+        transforms.Normalize((0.033, 0.032, 0.033), 
+                             (0.027, 0.027, 0.027))])
     
     # Build vocab  
     vocab = build_vocab(args.root_path, threshold=0)
@@ -51,17 +52,19 @@ def main(args):
                              shuffle=True, num_workers=args.num_workers) 
 
     # Build the models
-    encoder = EncoderCNN(args.embed_size)
+    #encoder = EncoderCNN(args.embed_size)
+    encoder = ResNet(ResidualBlock, [3, 3, 3], int(args.embed_size))
     decoder = DecoderRNN(args.embed_size, args.hidden_size, 
                          len(vocab), args.num_layers)
     
     if torch.cuda.is_available():
-        encoder.cuda()
-        decoder.cuda()
+            encoder.cuda(1)
+            decoder.cuda(1)
 
     # Loss and Optimizer
     criterion = nn.CrossEntropyLoss()
-    params = list(decoder.parameters()) + list(encoder.linear.parameters()) + list(encoder.bn.parameters())
+    #params = list(decoder.parameters()) + list(encoder.linear.parameters()) + list(encoder.bn.parameters())
+    params = list(decoder.parameters()) + list(encoder.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
 
     #set caption length
@@ -75,7 +78,7 @@ def main(args):
              #  break;
             
             # Set mini-batch dataset
-            images = to_var(images, volatile=True)
+            images = to_var(images)  # meanign of volatile?? 
             captions = to_var(captions)
             targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]            
             # Forward, Backward and Optimize
@@ -84,8 +87,7 @@ def main(args):
             features = encoder(images)
             outputs = decoder(features, captions, lengths)
 
-            #print(features.size)
-
+            #print(features)
 
             loss = criterion(outputs, targets)
             loss.backward()
@@ -132,7 +134,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default='./models/' ,
                         help='path for saving trained models')
-    parser.add_argument('--crop_size', type=int, default=224 ,
+    parser.add_argument('--crop_size', type=int, default=64 ,
                         help='size for randomly cropping images')
     parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples/',
                         help='path for root')

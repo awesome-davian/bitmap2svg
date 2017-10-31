@@ -30,7 +30,7 @@ class SVGDataset(data.Dataset):
         path = img_list[index]
 
         image = Image.open(os.path.join(self.img_root, path)).convert('RGB')
-        image = image.resize([224, 224], Image.LANCZOS)
+        image = image.resize([64, 64], Image.LANCZOS)
         if self.transform is not None:
             image = self.transform(image)
 
