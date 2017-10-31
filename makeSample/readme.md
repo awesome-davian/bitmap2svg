@@ -1,11 +1,9 @@
 
-a very simple example
+To make samples : circle.js
+To run on ubuntu : makeCircle.sh
 
 Get going:
 
 ```
-npm install
-node pie.js
+sh makeCircle.sh
 ```
-
-example usage in index.js
