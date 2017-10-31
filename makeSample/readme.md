@@ -1,10 +1,12 @@
 # Read Me
 
 To make samples : 
-### circle.js
+##### - circle.js
 
 To run on ubuntu :
-### makeCircle.sh
+##### - makeCircle.sh
+
+
 
 
 ### Get going:
