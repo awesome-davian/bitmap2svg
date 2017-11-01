@@ -1,8 +1,10 @@
 __MACOSX/
 makeSample/circle.js.save
-/makeSample/bitmap
-/makeSample/svg
+/makeSample/bitmap/
+/makeSample/svg/
 *.swp
-*.DS_store
+.DS_Store
 *.json
 *.zip
+*.log
+pie.js
