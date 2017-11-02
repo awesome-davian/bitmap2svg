@@ -34,8 +34,6 @@ def main(args):
     # Image preprocessing
     # For normalization, see https://github.com/pytorch/vision#models
     transform = transforms.Compose([ 
-        transforms.RandomCrop(args.crop_size),
-        transforms.RandomHorizontalFlip(), 
         transforms.ToTensor(), 
         transforms.Normalize((0.033, 0.032, 0.033), 
                              (0.027, 0.027, 0.027))])
@@ -45,6 +43,7 @@ def main(args):
     vocab_path = args.vocab_path
     with open(vocab_path, 'wb') as f:
         pickle.dump(vocab, f)
+    len_vocab = vocab.idx
     
     # Build data loader
     data_loader = get_loader(args.root_path, vocab, 
@@ -53,13 +52,15 @@ def main(args):
 
     # Build the models
     #encoder = EncoderCNN(args.embed_size)
-    encoder = ResNet(ResidualBlock, [3, 3, 3], int(args.embed_size))
-    decoder = DecoderRNN(args.embed_size, args.hidden_size, 
+    encoder = ResNet(ResidualBlock, [3, 3, 3], len_vocab)
+    decoder = DecoderRNN(len_vocab, args.hidden_size, 
                          len(vocab), args.num_layers)
+
     
     if torch.cuda.is_available():
             encoder.cuda(1)
             decoder.cuda(1)
+
 
     # Loss and Optimizer
     criterion = nn.CrossEntropyLoss()
@@ -75,19 +76,24 @@ def main(args):
         for i, (images, captions, lengths) in enumerate(data_loader):
 
             #if i > 1 : 
-             #  break;
-            
+            #   break;
+
+            # make one hot 
+            cap_ = torch.unsqueeze(captions,2)
+            one_hot_ = torch.FloatTensor(captions.size(0),captions.size(1),len_vocab).zero_()
+            one_hot_caption = one_hot_.scatter_(2, cap_, 1)
+
             # Set mini-batch dataset
-            images = to_var(images)  # meanign of volatile?? 
+            images = to_var(images)  
             captions = to_var(captions)
+            captions_ = to_var(one_hot_caption)
+            #print(captions_)
             targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]            
             # Forward, Backward and Optimize
             decoder.zero_grad()
             encoder.zero_grad()
             features = encoder(images)
-            outputs = decoder(features, captions, lengths)
-
-            #print(features)
+            outputs = decoder(features, captions_, lengths)
 
             loss = criterion(outputs, targets)
             loss.backward()
@@ -154,7 +160,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)
     args = parser.parse_args()
     print(args)
