@@ -26,11 +26,25 @@ module.exports = function( pieData, outputLocation ){
 		features:{ QuerySelector:true }, //you need query selector for D3 to work
 		done:function(errors, window){
 		    window.d3 = d3.select(window.document); //get d3 into the dom
+	//0 or 1
+        var rand = Math.random();
+        rand = rand >= 0.5? 1 : 0;
 
+        //1:circle, 2:rect
+        var figure_id = rand === 1? 'circle':'rect';
+        var figure_object = rand === 1? {
+          'class': 'circle',
+          "r": function(d){ return d }
+        } : {
+          'class': 'rect',
+          "width": function(d){ return d },
+          "height": function(d){ return d }
+        }
         r = (Math.random()+0.2)*100; // radius : 20 ~ 120
-        circleData = [r];
+        sizeData = [r];
 		    outputLocation =  i + '.svg';
 
+        
         //set coordinate of the circle, (x,y)
         /*
         rand_X = 0;
@@ -57,16 +71,11 @@ module.exports = function( pieData, outputLocation ){
 			.append('g')
 			.attr('transform','translate(' + coord_X + ',' + coord_Y + ')'); //set place where circle is.
 
-		    svg.selectAll('.circle')
-      .data(circleData)
+		    svg.selectAll('.circle .rect')
+      .data(sizeData)
       .enter()
-      .append("circle")
-      .attr({
-        'class':'circle',
-        // "cx": 50, //or, we can also set a coordinate of circle like this.
-        // "cy": 50,
-        "r": function(d){ return d }
-      })
+      .append(figure_id)
+      .attr(figure_object)
       .style("fill", function() {
         return "hsl(" + Math.random() * 360 + ",100%,50%)"; // set random color
       });

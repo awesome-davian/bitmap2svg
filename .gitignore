@@ -1,0 +1,10 @@
+__MACOSX/
+makeSample/circle.js.save
+/makeSample/bitmap/
+/makeSample/svg/
+*.swp
+.DS_Store
+*.json
+*.zip
+*.log
+pie.js
