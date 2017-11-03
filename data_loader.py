@@ -24,17 +24,18 @@ class SVGDataset(data.Dataset):
     def __getitem__(self, index):
         """Returns one data pair (image and caption)."""
         img_list = os.listdir(self.img_root)
-        cap_list = os.listdir(self.cap_root)
+        #cap_list = os.listdir(self.cap_root)
      
         vocab = self.vocab
         path = img_list[index]
+        cap_path = path.split('.')[0]+'.svg'
 
         image = Image.open(os.path.join(self.img_root, path)).convert('RGB')
         image = image.resize([64, 64], Image.LANCZOS)
         if self.transform is not None:
             image = self.transform(image)
 
-        with open(os.path.join(self.cap_root, cap_list[index]), 'r') as f:
+        with open(os.path.join(self.cap_root, cap_path), 'r') as f:
             caption = f.readline()
 
         # Convert caption (string) to word ids.
