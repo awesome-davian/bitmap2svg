@@ -67,8 +67,6 @@ def main(args):
     #params = list(decoder.parameters()) + list(encoder.linear.parameters()) + list(encoder.bn.parameters())
     params = list(decoder.parameters()) + list(encoder.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
-
-    #set caption length
     
     # Train the Models
     total_step = len(data_loader)
@@ -90,8 +88,7 @@ def main(args):
             #print(captions_)
             targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]            
             # Forward, Backward and Optimize
-            decoder.zero_grad()
-            encoder.zero_grad()
+            optimizer.zero_grad()
             features = encoder(images)
             outputs = decoder(features, captions_, lengths)
 
@@ -107,8 +104,8 @@ def main(args):
 
                 ##test set accuracy 
                 #rearrange tensor to batch_size * caption_size 
-                re_target = rearrange_tensor(targets, args.batch_size, captions.size(1))
-                re_out_max = rearrange_tensor(outputs.max(1)[1], args.batch_size, captions.size(1))
+                re_target = rearrange_tensor(targets, captions.size(0), captions.size(1))
+                re_out_max = rearrange_tensor(outputs.max(1)[1], captions.size(0), captions.size(1))
                 #convert to numpy 
                 outputs_np = re_out_max.cpu().data.numpy()
                 targets_np = re_target.cpu().data.numpy()
@@ -118,6 +115,7 @@ def main(args):
                 exact_match = 0             
                 for i in range(len(targets_np)):
                     #print(outputs_np[i])
+                    #print('target')
                     #print(targets_np[i])
                     if(outputs_np[i][1] == targets_np[i][1]):
                         location_match +=1
@@ -142,7 +140,7 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=64 ,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples/',
+    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples2/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
@@ -158,8 +156,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_layers', type=int , default=1 ,
                         help='number of layers in lstm')
     
-    parser.add_argument('--num_epochs', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)
     args = parser.parse_args()
