@@ -10,19 +10,19 @@ def pos_classifier(pos_x, pos_y):
     pos_y = int(pos_y)   
     sector = 0 
     
-    if pos_x > 0 and pos_x <= 166 and pos_y >0 and pos_y <= 166:
+    if pos_x >= 0 and pos_x <= 166 and pos_y >=0 and pos_y <= 166:
         sector = 1 
-    elif pos_x > 166 and pos_x <= 332 and pos_y >0 and pos_y <= 166:
+    elif pos_x > 166 and pos_x <= 332 and pos_y >=0 and pos_y <= 166:
         sector = 2
-    elif pos_x > 332 and pos_x <= 500 and pos_y >0 and pos_y <= 166:
+    elif pos_x > 332 and pos_x <= 500 and pos_y >=0 and pos_y <= 166:
         sector = 3
-    elif pos_x > 0 and pos_x <= 166 and pos_y >166 and pos_y <= 332:
+    elif pos_x >= 0 and pos_x <= 166 and pos_y >166 and pos_y <= 332:
         sector = 4
     elif pos_x > 166 and pos_x <= 332 and pos_y >166 and pos_y <= 332:
         sector = 5
     elif pos_x > 332 and pos_x <= 500 and pos_y >166 and pos_y <= 332:
         sector = 6
-    elif pos_x > 0 and pos_x <= 166 and pos_y >332 and pos_y <= 500:
+    elif pos_x >= 0 and pos_x <= 166 and pos_y >332 and pos_y <= 500:
         sector = 7
     elif pos_x > 166 and pos_x <= 332 and pos_y >332 and pos_y <= 500:
         sector = 8
