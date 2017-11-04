@@ -67,10 +67,19 @@ class ResNet(nn.Module):
         self.bn = nn.BatchNorm2d(32)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self.make_layer(block, 32, layers[0])
-        self.layer2 = self.make_layer(block, 64, layers[0], 2)
-        self.layer3 = self.make_layer(block, 128, layers[1], 2)
+        self.layer2 = self.make_layer(block, 64, layers[0],2)
+        self.layer3 = self.make_layer(block, 128, layers[1],2)
         self.avg_pool = nn.AvgPool2d(8)
         self.fc = nn.Linear(32768, num_classes)
+        #self.fc2 = nn.Linear(2048, num_classes)
+        #self.init_weights()
+
+    def init_weights(self):
+        """Initialize the weights."""
+        self.fc.weight.data.normal_(0.0, 0.02)
+        self.fc.bias.data.fill_(0)
+        self.fc2.weight.data.normal_(0.0, 0.02)
+        self.fc2.bias.data.fill_(0)
 
     def make_layer(self, block, out_channels, blocks, stride=1):
         downsample = None
@@ -95,6 +104,7 @@ class ResNet(nn.Module):
         #out = self.avg_pool(out)
         out = out.view(out.size(0), -1)
         out = self.fc(out)
+        #out = self.fc2(out)
         return out
 
 
@@ -103,6 +113,7 @@ class DecoderRNN(nn.Module):
         """Set the hyper-parameters and build the layers."""
         super(DecoderRNN, self).__init__()
         #self.embed = nn.Embedding(vocab_size, embed_size)
+        self.embed_size = embed_size
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.init_weights()
@@ -131,8 +142,11 @@ class DecoderRNN(nn.Module):
             outputs = self.linear(hiddens.squeeze(1))            # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
             sampled_ids.append(predicted)
-            inputs = self.embed(predicted)
-            inputs = inputs.unsqueeze(1)                         # (batch_size, 1, embed_size)
+            y_onehot = torch.FloatTensor(1, self.embed_size).zero_()
+            idx = int(predicted[0].cpu().data.numpy())
+            y_onehot[:,idx] = 1
+            inputs = Variable(y_onehot)
+            inputs = inputs.unsqueeze(1).cuda()                    # (batch_size, 1, embed_size)
         #print(sampled_ids)
         #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
         return sampled_ids

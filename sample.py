@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from torchvision import transforms 
 from data_loader import build_vocab 
 from model import EncoderCNN, DecoderRNN
+from model import ResNet, ResidualBlock
 from PIL import Image
 
 
@@ -25,20 +26,21 @@ def load_image(image_path, transform):
     
 def main(args):
     # Image preprocessing
-    transform = transforms.Compose([
+    transform = transforms.Compose([ 
         transforms.ToTensor(), 
-        transforms.Normalize((0.485, 0.456, 0.406), 
-                             (0.229, 0.224, 0.225))])
-    
+        transforms.Normalize((0.033, 0.032, 0.033), 
+                             (0.027, 0.027, 0.027))])
+
     # Load vocabulary wrapper
     with open(args.vocab_path, 'rb') as f:
         vocab = pickle.load(f)
+    len_vocab = vocab.idx 
 
     # Build Models
-    encoder = EncoderCNN(args.embed_size)
+    encoder = ResNet(ResidualBlock, [3, 3, 3], len_vocab)
     encoder.eval()  # evaluation mode (BN uses moving mean/variance)
 
-    decoder = DecoderRNN(args.embed_size, args.hidden_size, 
+    decoder = DecoderRNN(len_vocab, args.hidden_size, 
                          len(vocab), args.num_layers)
     
 
@@ -82,9 +84,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, required=True,
                         help='input image for generating caption')
-    parser.add_argument('--encoder_path', type=str, default='./models/encoder-5-15.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/encoder-5-350.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/decoder-5-15.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/decoder-5-350.pkl',
                         help='path for trained decoder')
     parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
                         help='path for vocabulary wrapper')

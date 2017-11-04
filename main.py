@@ -26,6 +26,7 @@ def rearrange_tensor(x, batch_size, caption_size):
 
     return temp_cat
 
+
 def main(args):
     # Create model directory
     if not os.path.exists(args.model_path):
@@ -44,6 +45,7 @@ def main(args):
     with open(vocab_path, 'wb') as f:
         pickle.dump(vocab, f)
     len_vocab = vocab.idx
+    print(vocab.idx2word)
     
     # Build data loader
     data_loader = get_loader(args.root_path, vocab, 
@@ -74,7 +76,7 @@ def main(args):
         for i, (images, captions, lengths) in enumerate(data_loader):
 
             #if i > 1 : 
-            #   break;
+             #  break;
 
             # make one hot 
             cap_ = torch.unsqueeze(captions,2)
@@ -85,12 +87,14 @@ def main(args):
             images = to_var(images)  
             captions = to_var(captions)
             captions_ = to_var(one_hot_caption)
-            #print(captions_)
-            targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]            
+            targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]  
+            #print(targets)          
             # Forward, Backward and Optimize
             optimizer.zero_grad()
             features = encoder(images)
             outputs = decoder(features, captions_, lengths)
+
+            #print(outputs.max(1)[1])
 
             loss = criterion(outputs, targets)
             loss.backward()
@@ -103,23 +107,28 @@ def main(args):
                         loss.data[0], np.exp(loss.data[0]))) 
 
                 ##test set accuracy 
-                #rearrange tensor to batch_size * caption_size 
-                re_target = rearrange_tensor(targets, captions.size(0), captions.size(1))
-                re_out_max = rearrange_tensor(outputs.max(1)[1], captions.size(0), captions.size(1))
                 #convert to numpy 
-                outputs_np = re_out_max.cpu().data.numpy()
-                targets_np = re_target.cpu().data.numpy()
-
+                outputs_np = outputs.max(1)[1].cpu().data.numpy()
+                targets_np = targets.cpu().data.numpy()
+                #print(outputs_np)
+                #print(targets_np)
 
                 location_match = 0 
-                exact_match = 0             
+                size_match = 0   
+                shape_match = 0 
+                exact_match = 0           
                 for i in range(len(targets_np)):
-                    if(outputs_np[i][1] == targets_np[i][1]):
-                        location_match +=1
-                    if(np.array_equal(outputs_np[i], targets_np[i])):
+                    if outputs_np[i] == targets_np[i]:
                         exact_match +=1 
-                print('location match accuracy: %.4f, exact match accuracy: %.4f'
-                 %(location_match/len(targets_np), exact_match/len(targets_np)))
+                    if i >= args.batch_size and i < args.batch_size*2 and outputs_np[i] == targets_np[i]:
+                        location_match +=1 
+                    elif i >= args.batch_size*2 and i < args.batch_size*3 and outputs_np[i] == targets_np[i]:
+                        shape_match +=1
+                    elif i >= args.batch_size*3 and i < args.batch_size*4 and outputs_np[i] == targets_np[i]:
+                        size_match  +=1
+
+                print('location match : %.4f, shape match : %.4f, exact_match: %.4f'
+                 %(location_match/(args.batch_size), shape_match/args.batch_size, exact_match/len(targets_np)))
 
             # Save the models
             if (i+1) % args.save_step == 0:
@@ -137,7 +146,7 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=64 ,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples2/',
+    parser.add_argument('--root_path', type=str, default='data/circle_and_rect/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
@@ -154,7 +163,7 @@ if __name__ == '__main__':
                         help='number of layers in lstm')
     
     parser.add_argument('--num_epochs', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)
     args = parser.parse_args()

@@ -44,7 +44,6 @@ def main(args):
 
     file_list = os.listdir(svg_path)
 
-    tot_list = []
     for f_list in file_list:
         fname = os.path.join(svg_path, f_list)
         doc = minidom.parse(fname)
@@ -56,29 +55,36 @@ def main(args):
         
         pos = g.getAttribute('transform')
         shape = polygon.getAttribute('class')
-        radius = polygon.getAttribute('r')
-        style = polygon.getAttribute('style')
         
+        # calculate sector 
         pos = pos.replace("translate(", "")
         pos = pos.replace(")", "")
         pos_x = pos.split(',')[0]
-        pos_y = pos.split(',')[1]
-        
+        pos_y = pos.split(',')[1]     
         sector = pos_classifier(pos_x, pos_y)
-        
-        radius = radius.split('.')[0]
-        radius = (str(round(float(radius)/10)*10))
-
-        style = style.replace("fill: hsl(","").split('.')[0]
-        
         
         attr_list.append(sector)
         attr_list.append(shape)
-        attr_list.append(radius)
-        #attr_list.append(style)
-        
-        tot_list.append(attr_list)
-        
+                
+        if shape == 'circle':
+            radius = polygon.getAttribute('r')
+            radius = radius.split('.')[0]
+            radius = (str(round(float(radius)/10)*10))
+            attr_list.append(radius)
+        elif shape == 'rect':
+            width = polygon.getAttribute('width')
+            height = polygon.getAttribute('height')
+            width = (str(round(float(width)/10)*10))
+            height = (str(round(float(height)/10)*10))
+            attr_list.append(width)
+            attr_list.append(height)
+            
+            
+        style = polygon.getAttribute('style') 
+        style = style.replace("fill: hsl(","").split('.')[0]       
+        #attr_list.append(style)   
+        #print(attr_list)
+                
         with open(os.path.join(caption_path, f_list), 'w+') as f:
             attr_str = ' '.join(attr_list)
             f.write(attr_str)
@@ -87,11 +93,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--caption_path', type=str, 
-                        default='data/bitmap2svg_samples/caption', 
+                        default='data/circle_and_rect/caption', 
                         help='path for train annotation file')
 
     parser.add_argument('--svg_path', type=str, 
-                        default='data/bitmap2svg_samples/svg', 
+                        default='data/circle_and_rect/svg', 
                         help='ath for train annotation file')
 
     args = parser.parse_args()
