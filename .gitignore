@@ -2,6 +2,7 @@ __MACOSX/
 makeSample/circle.js.save
 makeSample/bitmap/
 makeSample/svg/
+makeSample/node_modules
 *.swp
 .DS_Store
 *.json
