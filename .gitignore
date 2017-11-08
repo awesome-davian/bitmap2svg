@@ -3,11 +3,10 @@ __MACOSX/
 makeSample/circle.js.save
 makeSample/bitmap/
 makeSample/svg/
-makeSample/node_module
-makeSample/samples
+makeSample/node_modules/
+makeSample/samples/	
 *.swp
 .DS_Store
-*.json
 *.zip
 *.log
-pie.js
+
