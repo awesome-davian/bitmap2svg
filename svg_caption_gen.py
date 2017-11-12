@@ -30,7 +30,22 @@ def pos_classifier(pos_x, pos_y):
         sector = 9
     
     return str(sector)
-  
+
+def pos_classifier_2D(pos_x, pos_y):
+
+    pos_x = int(pos_x)
+    pos_y = int(pos_y)
+
+    pos_x = pos_x//50 + 1 
+    pos_y = pos_y//50 + 1
+
+    return str(pos_x), str(pos_y)
+
+def get_color(hsl):
+    hsl = int(hsl)
+    color_list = ['red', 'orange', 'yellow', 'lime', 'green', 'spring_green', 'cyan', 'skyblue','blue', 'purple', 'pink', 'deep_pink']
+    return color_list[hsl//30]
+
 def parse_attribute(pos, polygon, attr_list):
 
     shape = polygon.getAttribute('class')
@@ -41,8 +56,9 @@ def parse_attribute(pos, polygon, attr_list):
     pos = pos.replace(")", "")
     pos_x = pos.split(',')[0]
     pos_y = pos.split(',')[1]     
-    sector = pos_classifier(pos_x, pos_y)
-    attr_list.append(sector)
+    x, y = pos_classifier_2D(pos_x, pos_y)
+    attr_list.append(x)
+    attr_list.append(y)
 
     if shape == 'circle':
         radius = polygon.getAttribute('r')
@@ -59,8 +75,9 @@ def parse_attribute(pos, polygon, attr_list):
 
 
     style = polygon.getAttribute('style') 
-    style = style.replace("fill: hsl(","").split('.')[0]       
-    #attr_list.append(style)
+    style = style.replace("fill: hsl(","").split('.')[0] 
+    style = get_color(style)      
+    attr_list.append(style)
 
     #print(attr_list)
     
@@ -70,7 +87,10 @@ def parse_attribute_type2(polygon, attr_list):
 
     shape = polygon.getAttribute('class') 
     attr_list.append(shape)
-  
+    
+    style = polygon.getAttribute('style') 
+    style = style.replace("fill: hsl(","").split('.')[0]   
+    style = get_color(style)      
     
     if shape == 'circle':
         radius = polygon.getAttribute('r')
@@ -79,16 +99,19 @@ def parse_attribute_type2(polygon, attr_list):
         
         cx = polygon.getAttribute('cx')
         cy = polygon.getAttribute('cy')
-        sector= pos_classifier(cx,cy)
+        x, y= pos_classifier_2D(cx,cy)
         
-        attr_list.append(sector)
+        attr_list.append(x)
+        attr_list.append(y)
         attr_list.append(radius)
+        attr_list.append(style)
         
     elif shape == 'rect':
         x = polygon.getAttribute("x")
         y = polygon.getAttribute("y")
-        sector = pos_classifier(x,y) 
-        attr_list.append(sector)
+        x, y = pos_classifier_2D(x,y) 
+        attr_list.append(x)
+        attr_list.append(y)
         
         width = polygon.getAttribute('width')
         height = polygon.getAttribute('height')
@@ -97,6 +120,7 @@ def parse_attribute_type2(polygon, attr_list):
         
         attr_list.append(width)
         attr_list.append(height)
+        attr_list.append(style)
 
 
     style = polygon.getAttribute('style') 
@@ -150,11 +174,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--caption_path', type=str, 
-                        default='data/3object/caption', 
+                        default='data/circle_and_rect_1k/caption', 
                         help='path for train annotation file')
 
     parser.add_argument('--svg_path', type=str, 
-                        default='data/3object/svg', 
+                        default='data/circle_and_rect_1k/svg', 
                         help='ath for train annotation file')
 
     args = parser.parse_args()

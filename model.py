@@ -4,7 +4,7 @@ import torchvision.models as models
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.autograd import Variable
 
-
+#pretrained resent152 model encoder
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
         """Load the pretrained ResNet-152 and replace top fc layer."""
@@ -107,7 +107,7 @@ class ResNet(nn.Module):
         #out = self.fc2(out)
         return out
 
-
+#Basic decoder RNN
 class DecoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers):
         """Set the hyper-parameters and build the layers."""
@@ -129,6 +129,7 @@ class DecoderRNN(nn.Module):
         #embeddings = self.embed(captions)
         embeddings = torch.cat((features.unsqueeze(1), captions), 1)
         packed = pack_padded_sequence(embeddings, lengths, batch_first=True) 
+        #packed = torch.cat((features.unsqueeze(1), captions),1)
         hiddens, _ = self.lstm(packed)
         outputs = self.linear(hiddens[0])
         return outputs
@@ -137,7 +138,7 @@ class DecoderRNN(nn.Module):
         """Samples captions for given image features (Greedy search)."""
         sampled_ids = []
         inputs = features.unsqueeze(1)
-        for i in range(10):                                      # maximum sampling length
+        for i in range(30):                                      # maximum sampling length
             hiddens, states = self.lstm(inputs, states)          # (batch_size, 1, hidden_size), 
             outputs = self.linear(hiddens.squeeze(1))            # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
@@ -150,3 +151,41 @@ class DecoderRNN(nn.Module):
         #print(sampled_ids)
         #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
         return sampled_ids
+
+
+class AttnDecoderRnn(nn.Module):
+    def __init__(self,  hidden_size, vocab_size, num_layers, dropout_p):
+        super(AttnDecoderRnn, self).__init__()
+        #Define parameters
+
+        #Define layers
+        self.dropout = nn.Dropout(dropout_p)
+        self.attn = Attn('general', hidden_size)
+        self.lstm = nn.LSTM(vocab_size, hidden_size, batch_first=True)
+        self.out = nn.Linear(hidden_size, vocab_size)
+
+    def forward(self, features, captions, lengths, en_out):
+
+        embedding = torch.cat((features.unsqueeze(1), captions), 1)
+        packed  = pack_padded_sequence(embedding, lengths, batch_first=True)
+        max_length = max(lengths)
+
+
+
+        for i in range(max_length):
+            context, attn = self.attn(de_hidden, features)
+            de_out, de_hidden, attn = self.forward_step(de_in, de_hidden, en_out)
+
+
+
+        lstm_out, _ = self.lstm(packed)
+
+        #Cacluate attention weight and apply to encoder output
+        attn_weights = self.attn(lstm_out, en_out)
+
+    def forward_step():
+        return 
+
+
+
+

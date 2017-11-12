@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 import os
 from data_loader import build_vocab, get_loader
-from model import EncoderCNN, DecoderRNN 
+from model import DecoderRNN 
 from model import ResNet, ResidualBlock
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
@@ -13,7 +13,7 @@ import pickle
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
-        x = x.cuda(1)
+        x = x.cuda()
     return Variable(x, volatile=volatile)
 
 def rearrange_tensor(x, batch_size, caption_size):
@@ -33,7 +33,6 @@ def main(args):
         os.makedirs(args.model_path)
     
     # Image preprocessing
-    # For normalization, see https://github.com/pytorch/vision#models
     transform = transforms.Compose([ 
         transforms.ToTensor(), 
         transforms.Normalize((0.033, 0.032, 0.033), 
@@ -53,20 +52,20 @@ def main(args):
                              shuffle=True, num_workers=args.num_workers) 
 
     # Build the models
-    #encoder = EncoderCNN(args.embed_size)
     encoder = ResNet(ResidualBlock, [3, 3, 3], len_vocab)
     decoder = DecoderRNN(len_vocab, args.hidden_size, 
                          len(vocab), args.num_layers)
 
+    #Build atten models 
+    attn_encoder = ResNet(ResidualBlock, [3,3,3], args.hidden_size)
     
     if torch.cuda.is_available():
-            encoder.cuda(1)
-            decoder.cuda(1)
+            encoder.cuda()
+            decoder.cuda()
 
 
     # Loss and Optimizer
     criterion = nn.CrossEntropyLoss()
-    #params = list(decoder.parameters()) + list(encoder.linear.parameters()) + list(encoder.bn.parameters())
     params = list(decoder.parameters()) + list(encoder.parameters())
     optimizer = torch.optim.Adam(params, lr=args.learning_rate)
     
@@ -87,14 +86,12 @@ def main(args):
             images = to_var(images)  
             captions = to_var(captions)
             captions_ = to_var(one_hot_caption)
+            
             targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]  
-            #print(targets)          
             # Forward, Backward and Optimize
             optimizer.zero_grad()
             features = encoder(images)
             outputs = decoder(features, captions_, lengths)
-
-            #print(outputs.max(1)[1])
 
             loss = criterion(outputs, targets)
             loss.backward()
@@ -106,12 +103,10 @@ def main(args):
                       %(epoch, args.num_epochs, i, total_step, 
                         loss.data[0], np.exp(loss.data[0]))) 
 
-                ##test set accuracy 
-                #convert to numpy 
+                #test set accuracy 
+                #print(outputs.max(1)[1])
                 outputs_np = outputs.max(1)[1].cpu().data.numpy()
                 targets_np = targets.cpu().data.numpy()
-                #print(outputs_np)
-                #print(targets_np)
 
                 location_match = 0 
                 size_match = 0   
@@ -121,9 +116,9 @@ def main(args):
                     if outputs_np[i] == targets_np[i]:
                         exact_match +=1 
                     if i >= args.batch_size and i < args.batch_size*2 and outputs_np[i] == targets_np[i]:
-                        location_match +=1 
+                        shape_match +=1 
                     elif i >= args.batch_size*2 and i < args.batch_size*3 and outputs_np[i] == targets_np[i]:
-                        shape_match +=1
+                        location_match +=1
                     elif i >= args.batch_size*3 and i < args.batch_size*4 and outputs_np[i] == targets_np[i]:
                         size_match  +=1
 
@@ -142,17 +137,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/' ,
+    parser.add_argument('--model_path', type=str, default='./models/3object_color/' ,
                         help='path for saving trained models')
-    parser.add_argument('--crop_size', type=int, default=64 ,
+    parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/circle_and_rect/',
+    parser.add_argument('--root_path', type=str, default='data/3object/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
-    parser.add_argument('--save_step', type=int , default=5,
+    parser.add_argument('--save_step', type=int , default=50,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/vocab_3object_color.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,
@@ -162,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_layers', type=int , default=1 ,
                         help='number of layers in lstm')
     
-    parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)
