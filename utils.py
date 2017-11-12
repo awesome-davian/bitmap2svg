@@ -18,8 +18,6 @@ batch_size = 128
 num_workers = 2
 crop_size = 64
 transform = transforms.Compose([ 
-    transforms.RandomCrop(crop_size),
-    transforms.RandomHorizontalFlip(), 
     transforms.ToTensor()
     ])
 

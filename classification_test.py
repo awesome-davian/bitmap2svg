@@ -3,11 +3,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 from data_loader import build_vocab, get_loader
-from model import ResNet, ResidualBlock
+from model import ResNet, ResidualBlock, EncoderCNN
 from torch.autograd import Variable 
 from torchvision import transforms
-import pickle
-
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
@@ -45,7 +43,6 @@ def main(args):
 
     # Build the models
     cnn = ResNet(ResidualBlock, [3, 3, 3], num_class)
-
     
     if torch.cuda.is_available():
             cnn.cuda(1)
