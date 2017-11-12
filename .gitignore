@@ -1,4 +1,7 @@
-
+*.pyc
+models
+*.out
+data
 __MACOSX/
 makeSample/circle.js.save
 makeSample/bitmap/
