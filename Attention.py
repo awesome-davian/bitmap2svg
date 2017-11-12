@@ -1,34 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.funtional as F
-
-
-class GlobalAttention(nn.Module):
-	"""
-	Bahdanau attention 
-	"""
-	def __init__(self, embed_size, hidden_size, coverage=False):
-		super(GlobalAttention, self).__init__()
-
-		self.h_dec_linear = nn.Linear()
-	def align(self, h_de, h_en):
-		return
-
-
-
-	def forward(self, de_out, en_hidden, coverage=None):
-		"""
-		decoder_out: b_size*trg_len*dim 
-		encdoer_hidden: b_size*src_len*dim
-		"""
-
-		# Calculate attention weights and apply to encoder outputs
-		attn_weight = self.attn()
-
-
-		return  
-
-
+import torch.nn.functional as F
 
 class Attn(nn.Module):
 	"""
@@ -60,19 +32,10 @@ class Attn(nn.Module):
 		de_hidden = de_hidden.unsqueeze(2)         #batch, feature_size, 1 
 		attn_weight = torch.bmm(en_out, de_hidden)   #batch, depth, 1 
 		attn_weight = F.softmax(attn_weight)
+		context = torch.bmm(attn_weight.transpose(2,1),en_out) #batch, 1, feature_size
 
-		context = torch.bmm(de_hidden.transpose(1,2), 
-			)
-
-
-
-
-		return
-
-
-
-
-		 
+		return context
+ 
 
 	def score(self, de_hidden, en_out):
 

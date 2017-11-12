@@ -153,38 +153,6 @@ class DecoderRNN(nn.Module):
         return sampled_ids
 
 
-class AttnDecoderRnn(nn.Module):
-    def __init__(self,  hidden_size, vocab_size, num_layers, dropout_p):
-        super(AttnDecoderRnn, self).__init__()
-        #Define parameters
-
-        #Define layers
-        self.dropout = nn.Dropout(dropout_p)
-        self.attn = Attn('general', hidden_size)
-        self.lstm = nn.LSTM(vocab_size, hidden_size, batch_first=True)
-        self.out = nn.Linear(hidden_size, vocab_size)
-
-    def forward(self, features, captions, lengths, en_out):
-
-        embedding = torch.cat((features.unsqueeze(1), captions), 1)
-        packed  = pack_padded_sequence(embedding, lengths, batch_first=True)
-        max_length = max(lengths)
-
-
-
-        for i in range(max_length):
-            context, attn = self.attn(de_hidden, features)
-            de_out, de_hidden, attn = self.forward_step(de_in, de_hidden, en_out)
-
-
-
-        lstm_out, _ = self.lstm(packed)
-
-        #Cacluate attention weight and apply to encoder output
-        attn_weights = self.attn(lstm_out, en_out)
-
-    def forward_step():
-        return 
 
 
 

@@ -74,36 +74,59 @@ class AttnEncoder(nn.Module):
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = out.view(out.size(1), out.size(0), -1)
+        out = out.view(out.size(0), out.size(1), -1)
         return out
 
 
 class AttnDecoderRnn(nn.Module):
-    def __init__(self, feature_size, hidden_size, vocab_size, num_layers, dropout_p):
+    def __init__(self,  feature_size, hidden_size, vocab_size, num_layers, dropout_p):
         super(AttnDecoderRnn, self).__init__()
         #Define parameters
 
         #Define layers
         self.embed = nn.Embedding(vocab_size, hidden_size)
-        self.attn = Attn('concat', feature_size, hidden_size)
+        self.attn = Attn('general', feature_size, hidden_size)
         self.lstm = nn.LSTM(vocab_size, hidden_size, batch_first=True)
-        self.out = nn.Linear(hidden_size, vocab_size)
+        self.ctx2out = nn.Linear(feature_size, feature_size)
+        self.h2out = nn.Linear(hidden_size, feature_size)
+        self.out = nn.Linear(feature_size, vocab_size)
+    
+    def decode_lstm(self, input_word, context, hidden):
+
+        context = context.squeeze(1)
+        out = self.ctx2out(context)
+        out += input_word
+        hidden = hidden.squeeze(0)
+        out += self.h2out(hidden)
+        out = self.out(out)
+
+        return out
 
     def forward(self, features, captions, lengths, en_out):
 
         max_length = max(lengths)
+        embed = nn.Embedding(captions)
+        h, c= None
+        arr = [] 
 
         for i in range(max_length):
-            context, attn = self.attn(de_hidden, features)
-            de_out, de_hidden, attn = self.forward_step(de_in, de_hidden, en_out)
+            context = self.attn(h, features)
+            lstm_input = torch.cat((context, embed[:,i].unsqueeze(1)),1)
+            _, (h,c) = self.lstm(lstm_input, (h,c))
+            input_word = embed[:,i]
+            out = self.out(input_word,context, h).unsqueeze(1)
+            arr += [out]
+
+        return torch.cat(arr,1)
 
 
 
-        lstm_out, _ = self.lstm(packed)
 
-        #Cacluate attention weight and apply to encoder output
-        attn_weights = self.attn(lstm_out, en_out)
 
-    def forward_step():
-        return 
+
+
+
+
+
+
 
