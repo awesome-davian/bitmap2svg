@@ -7,6 +7,7 @@ from torchvision import transforms
 from data_loader import build_vocab 
 from model import EncoderCNN, DecoderRNN
 from model import ResNet, ResidualBlock
+from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
 from PIL import Image
 
 
@@ -43,23 +44,28 @@ def main(args):
     decoder = DecoderRNN(len_vocab, args.hidden_size, 
                          len(vocab), args.num_layers)
     
+    attn_encoder = AttnEncoder(ResidualBlock, [3, 3, 3])
+    attn_encoder.eval()
+    attn_decoder = AttnDecoderRnn(args.feature_size, args.hidden_size, 
+                         len(vocab), args.num_layers)
 
     # Load the trained model parameters
-    encoder.load_state_dict(torch.load(args.encoder_path))
-    decoder.load_state_dict(torch.load(args.decoder_path))
+    attn_encoder.load_state_dict(torch.load(args.encoder_path))
+    attn_decoder.load_state_dict(torch.load(args.decoder_path))
+
 
     # Prepare Image
     image = load_image(args.image, transform)
     image_tensor = to_var(image, volatile=True)
-   
+
     # If use gpu
     if torch.cuda.is_available():
-        encoder.cuda()
-        decoder.cuda()
+        attn_encoder.cuda()
+        attn_decoder.cuda()
     
     # Generate caption from image
-    feature = encoder(image_tensor)
-    sampled_ids = decoder.sample(feature)
+    feature = attn_encoder(image_tensor)
+    sampled_ids = attn_decoder.sample(feature)
     ids_arr = []
     for element in sampled_ids: 
         temp = element.cpu().data.numpy()
@@ -84,17 +90,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, required=True,
                         help='input image for generating caption')
-    parser.add_argument('--encoder_path', type=str, default='./models/encoder-5-350.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/attn/3object/encoder-10-150.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/decoder-5-350.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/attn/3object/decoder-10-150.pkl',
                         help='path for trained decoder')
-    parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',
+    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocab3.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='data/bitmap2svg_samples/',
+    parser.add_argument('--root_path', type=str, default='data/3object/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)
     parser.add_argument('--embed_size', type=int , default=256,
+                        help='dimension of word embedding vectors')
+    parser.add_argument('--feature_size', type=int , default=256,
                         help='dimension of word embedding vectors')
     parser.add_argument('--hidden_size', type=int , default=512,
                         help='dimension of lstm hidden states')
