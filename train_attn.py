@@ -86,6 +86,7 @@ def main(args):
 
             captions = captions.view(-1)
             outputs = outputs.view(-1,len_vocab)
+            #print(outputs.size())
 
             loss = criterion(outputs, captions)
             loss.backward()
@@ -98,6 +99,7 @@ def main(args):
                         loss.data[0], np.exp(loss.data[0]))) 
 
                 #test set accuracy 
+                print(outputs.max(1)[1].view(args.batch_size, -1))
                 outputs_np = outputs.max(1)[1].cpu().data.numpy()
                 targets_np = captions.cpu().data.numpy()
 
@@ -137,7 +139,7 @@ if __name__ == '__main__':
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/circle_and_rect/',
+    parser.add_argument('--root_path', type=str, default='data/circle_and_rect_1k/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
