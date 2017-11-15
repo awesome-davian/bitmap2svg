@@ -33,7 +33,8 @@ class Attn(nn.Module):
 
 		de_hidden = de_hidden.unsqueeze(2)         #batch, feature_size, 1 
 		attn_weight = torch.bmm(en_out, de_hidden)   #batch, depth, 1 
-		attn_weight = F.softmax(attn_weight)
+		attn_weight = attn_weight.squeeze(2)
+		attn_weight = F.softmax(attn_weight).unsqueeze(2)
 		context = torch.bmm(attn_weight.transpose(2,1),en_out) #batch, 1, feature_size
 
 		return context

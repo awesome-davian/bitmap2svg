@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 import pickle
+import torch.nn.functional as F 
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
@@ -99,6 +100,7 @@ def main(args):
                         loss.data[0], np.exp(loss.data[0]))) 
 
                 #test set accuracy 
+                #print(outputs.view(args.batch_size,-1))
                 print(outputs.max(1)[1].view(args.batch_size, -1))
                 outputs_np = outputs.max(1)[1].cpu().data.numpy()
                 targets_np = captions.cpu().data.numpy()
@@ -135,17 +137,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/attn/1object/' ,
+    parser.add_argument('--model_path', type=str, default='./models/attn/2object/' ,
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/circle_and_rect_1k/',
+    parser.add_argument('--root_path', type=str, default='data/2object/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=50,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocab1.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocab2.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,

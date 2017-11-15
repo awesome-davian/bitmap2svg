@@ -151,14 +151,13 @@ class AttnDecoderRnn(nn.Module):
     def sample(self, features):
         """Samples captions for given image features (Greedy search)."""
         sampled_ids = []
-        inputs = features.unsqueeze(1)
         h,c = self.init_lstm(features)
 
-        for i in range(30):                                      # maximum sampling length
+        for i in range(10):                                      # maximum sampling length
             if i == 0:
                 #word_init = Variable(torch.LongTensor([1])).cuda()
                 #x = self.embed(word_init).unsqueeze(1)
-                x = Variable(torch.zeros(1,1,256)).cuda()
+                x = Variable(torch.rand(1,1,256)).cuda()
                 #sampled_ids.append(word_init)
             else: 
                 x = self.embed((predicted))
@@ -167,9 +166,15 @@ class AttnDecoderRnn(nn.Module):
             lstm_input = torch.cat((context, x) ,2)
             lstm_out, (h,c) = self.lstm(lstm_input, (h,c))          # (batch_size, 1, hidden_size), 
             out = self.decode_lstm(x, context, h, lstm_out)
-            #print(out)
+            # hidden = lstm_out.squeeze(0)
+            # out = self.h2out(hidden)
+            # context = context.squeeze(1)
+            # out += self.ctx2out(context)
+            # out += x
+            # out = F.tanh(out)
+            # out = self.out(out)
             predicted = out.max(1)[1]
-            print(predicted)
+            #print(predicted)
             sampled_ids.append(predicted)
         #print(sampled_ids)
         #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
