@@ -117,9 +117,9 @@ class AttnDecoderRnn(nn.Module):
 
     def init_lstm(self, features):
 
-        sums = torch.sum(features, 1)
-        out = torch.mul(sums, 1/features.size(1))
-        out = out.squeeze(1).unsqueeze(0) # 1, batch, feature_size
+        sums = torch.sum(features, 2)
+        out = torch.mul(sums, 1/features.size(2))
+        out = out.squeeze(2).unsqueeze(0) # 1, batch, feature_size
         out = self.init_layer(out.squeeze(0)).unsqueeze(0)
         out = F.tanh(out)
 
@@ -153,11 +153,11 @@ class AttnDecoderRnn(nn.Module):
         sampled_ids = []
         h,c = self.init_lstm(features)
 
-        for i in range(10):                                      # maximum sampling length
+        for i in range(40):                                      # maximum sampling length
             if i == 0:
                 #word_init = Variable(torch.LongTensor([1])).cuda()
                 #x = self.embed(word_init).unsqueeze(1)
-                x = Variable(torch.rand(1,1,256)).cuda()
+                x = Variable(torch.rand(1,1,128)).cuda()
                 #sampled_ids.append(word_init)
             else: 
                 x = self.embed((predicted))
