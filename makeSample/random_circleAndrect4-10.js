@@ -27,23 +27,7 @@ module.exports = function( pieData, outputLocation ){
     		done:function(errors, window){
     		    window.d3 = d3.select(window.document); //get d3 into the dom
 
-        	  var circle_object = {
-           		'class': 'circle',
-           		"r": function(d){ return d }
-       		  };
-		        var rect_object = {
-    	         'class': 'rect',
-      		     "width": function(d){ return d },
-       	  		 "height": function(d){ return d }
-            };
-		        sizeData = new Array();
-        		for(var j=0;j<2;++j){
-        	     sizeData.push((Math.random()+0.2)*100);
-        		}
-          	//size1 = (Math.random()+0.2)*100; // radius : 20 ~ 120
-          	//sizeData = [r];
         	  outputLocation =  i + '.svg';
-
 
     		    //do yr normal d3 stuff
     		    var svg = window.d3.select('body')
@@ -53,46 +37,66 @@ module.exports = function( pieData, outputLocation ){
       			    xmlns:'http://www.w3.org/2000/svg',
       			    width:chartWidth,
       			    height:chartHeight
-      			})
+      			});
 
-    		    for(var j=0;j<2;++j){
-          			// pull size data to fit # figures
-          			if(j==1)sizeData.pop();
-       		    	var rand = Math.random();
-          			var scaler = Math.floor(rand * chartWidth);
-        	    	rand = rand >= 0.5? 1 : 0;
-          			if(rand==0){
-        			     svg.selectAll('circle')
-                       .data(sizeData)
-                  		 .enter()
-                  		 .append('circle')
-            				   .attr("cx", function(d) {
-              				       return Math.floor((Math.random()) * chartWidth);
-              				 })
-                       .attr("cy", function(d) {
-                          return Math.floor((Math.random()) * chartWidth);
-                       })
-            				   .attr(circle_object)
-            			     .style("fill", function() {
-                          return "hsl(" + Math.random() * 360 + ",100%,50%)"; // set random color
-                       });
-          		  }else{
-          			   svg.selectAll('rect')
-          				     .data(sizeData)
-          				     .enter()
-          			    	 .append('rect')
-                    	 .attr("x", function(d) {
-                          return Math.floor((Math.random()) * chartWidth);
-                       })
-                       .attr("y", function(d) {
-                          return Math.floor((Math.random()) * chartWidth);
-                       })
-          				     .attr(rect_object)
-                       .style("fill", function() {
-                   		    return "hsl(" + Math.random() * 360 + ",100%,50%)"; // set random color
-                  		 });
-          			}
-       		  }
+            var temp_arr = [4,7,10];
+            //rand is 4 or 7 or 10
+            var rand = temp_arr[Math.floor(Math.random() * temp_arr.length)];
+            //temp_rand is in the range of [0,rand]
+            var temp_rand = Math.floor(Math.random() * (rand+1))
+
+            var circleData = new Array();
+            for(var j=0;j<temp_rand;++j){
+              var temp = {};
+              temp['radius'] = (Math.random()+0.2)*100;
+              temp['color'] = Math.floor(Math.random()*13);
+              circleData.push(temp);
+            }
+            var rectData = new Array();
+            for(var j=0;j<rand - temp_rand;++j){
+              var temp = {};
+              temp['width'] = (Math.random()+0.2)*100;
+              temp['height'] = (Math.random()+0.2)*100;
+              temp['color'] = Math.floor(Math.random()*13);
+              rectData.push(temp);
+            }
+
+  			    svg.selectAll('circle')
+                 .data(circleData)
+            		 .enter()
+            		 .append('circle')
+      				   .attr("cx", function(d) {
+        				       return Math.floor((Math.random()) * chartWidth);
+        				 })
+                 .attr("cy", function(d) {
+                    return Math.floor((Math.random()) * chartWidth);
+                 })
+      				   .attr({
+                		'class': 'circle',
+                		"r": function(d){ return d.radius }
+            		  })
+      			     .style("fill", function(d) {
+                    return "hsl(" + 30 * d.color + ",100%,50%)"; // set random color
+                 });
+
+    			  svg.selectAll('rect')
+    				     .data(rectData)
+    				     .enter()
+    			    	 .append('rect')
+              	 .attr("x", function(d) {
+                    return Math.floor((Math.random()) * chartWidth);
+                 })
+                 .attr("y", function(d) {
+                    return Math.floor((Math.random()) * chartWidth);
+                 })
+    				     .attr({
+           	        'class': 'rect',
+             		    "width": function(d){ return d.width },
+              	  	"height": function(d){ return d.height }
+                 })
+                 .style("fill", function(d) {
+             		    return "hsl(" + 30 * d.color + ",100%,50%)"; // set random color
+            		 });
 
     		    //write out the children of the container div
     		    fs.writeFileSync(path.join(__dirname, 'svg', outputLocation), window.d3.select('.container').html()) //using sync to keep the code simple
