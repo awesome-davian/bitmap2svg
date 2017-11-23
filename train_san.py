@@ -5,6 +5,7 @@ import numpy as np
 import os
 from data_loader import build_vocab, get_loader
 from model import ResNet, ResidualBlock
+from SAN_model import SANDecoder
 from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
@@ -54,7 +55,7 @@ def main(args):
 
     # Build the attn models
     encoder = AttnEncoder(ResidualBlock, [3, 3, 3])
-    decoder = AttnDecoderRnn(args.feature_size, args.hidden_size, 
+    decoder = SANDecoder(args.feature_size, args.hidden_size, 
                          len(vocab), args.num_layers)
 
     
@@ -137,7 +138,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/attn/3object/' ,
+    parser.add_argument('--model_path', type=str, default='./models/san/3object/' ,
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
@@ -147,7 +148,7 @@ if __name__ == '__main__':
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=150,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocab3.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/san/vocab3.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=128 ,

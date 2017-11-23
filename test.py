@@ -12,11 +12,13 @@ from PIL import Image
 import os 
 from xml.dom import minidom
 import cairosvg
+from SAN_model import SANDecoder
+
 
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
-        x = x.cuda()
+        x = x.cuda(1)
     return Variable(x, volatile=volatile)
 
 def load_image(image_path, transform):
@@ -34,6 +36,7 @@ def parse_caption(cap_arr, doc):
                   'skyblue','blue', 'purple', 'pink', 'deep_pink']
     svg_color = ['red', 'orange', 'yellow', 'greenyellow', 'lime', 'springgreen', 'cyan',
                     'blue', 'mediumblue', 'purple', 'pink', 'deeppink']
+
 
     if cap_arr[0] == 'circle':
         polygon = doc.createElement('circle')
@@ -67,6 +70,7 @@ def parse_caption(cap_arr, doc):
         polygon.setAttribute('style', style)
 
         cap_arr = cap_arr[6:]
+ 
 
     return polygon, cap_arr
 
@@ -137,19 +141,18 @@ def main(args):
 
     # If use gpu
     if torch.cuda.is_available():
-        encoder.cuda()
-        decoder.cuda()
+        encoder.cuda(1)
+        decoder.cuda(1)
 
 
     trg_bitmap_dir = args.root_path + 'bitmap/'
     trg_cap_dir = args.root_path + 'caption/'
-    trg_svg_dir = args.root_path + 'svg/'
-
-    out_cap_dir = args.root_path + 'gen/caption/'              #output caption from model
-    svg_from_trg = args.root_path + 'gen/svg_from_trg_caption/'    #svg from target caption 
-    svg_from_out = args.root_path + 'gen/svg_from_out_caption/'   # svg from output caption 
-    bitmap_from_trg = args.root_path + 'gen/bitmap_from_trg_svg/'  #bitmap from svg from target caption
-    bitmap_from_out = args.root_path + 'gen/bitmap_from_out_cap/'   #bitmap from out caption 
+    save_directory = 'gen/'
+    out_cap_dir = args.root_path + save_directory + 'caption/'              #output caption from model
+    svg_from_trg = args.root_path + save_directory + 'svg_from_trg_caption/'    #svg from target caption 
+    svg_from_out = args.root_path + save_directory + 'svg_from_out_caption/'   # svg from output caption 
+    bitmap_from_trg = args.root_path + save_directory + 'bitmap_from_trg_svg/'  #bitmap from svg from target caption
+    bitmap_from_out = args.root_path + save_directory + 'bitmap_from_out_cap/'   #bitmap from out caption 
 
     if not os.path.exists(out_cap_dir):
         os.makedirs(out_cap_dir)
@@ -165,55 +168,56 @@ def main(args):
     test_list = os.listdir(trg_bitmap_dir)
     cnt = 0
     for fname in test_list: 
-        if cnt >2:
-            break;
-        #cnt +=1 
+        #if cnt >2:
+         #   break;
+        cnt +=1 
         #load image 
-        test_path = trg_bitmap_dir + fname
-        test_image = load_image(test_path, transform)
-        image_tensor = to_var(test_image)
-         
-        #gen caption and write to file 
-        in_sentence = gen_caption_from_image(image_tensor, encoder, decoder, vocab)
-        with open(os.path.join(out_cap_dir, fname), 'w+') as f:
-            f.write(in_sentence)
+        try:
+            test_path = trg_bitmap_dir + fname
+            test_image = load_image(test_path, transform)
+            image_tensor = to_var(test_image)
 
-        #generate svg from trg_caption, convert to bitmap 
-        cap_name = fname.replace('.png', '.svg')
-        with open(os.path.join(trg_cap_dir, cap_name), 'r') as f:
-            trg_caption = f.read()
-        doc = gen_svg_conv2bitmap(trg_caption)
-        #write svg 
-        with open(os.path.join(svg_from_trg, cap_name), 'w+') as f:
-            f.write(doc.toxml())
+            #gen caption and write to file 
+            in_sentence = gen_caption_from_image(image_tensor, encoder, decoder, vocab)
+            with open(os.path.join(out_cap_dir, fname), 'w+') as f:
+                f.write(in_sentence)
 
-        #convert and save as bitmap 
-        svg_path = svg_from_trg + cap_name
-        bitmap_path = bitmap_from_trg + fname
-        cairosvg.svg2png(url=svg_path, write_to=bitmap_path)
+            #generate svg from trg_caption, convert to bitmap 
+            cap_name = fname.replace('.png', '.svg')
+            with open(os.path.join(trg_cap_dir, cap_name), 'r') as f:
+                trg_caption = f.read()
+            doc = gen_svg_conv2bitmap(trg_caption)
+            #write svg 
+            with open(os.path.join(svg_from_trg, cap_name), 'w+') as f:
+                f.write(doc.toxml())
 
-        #generate svg from output caption
-        out_doc = gen_svg_conv2bitmap(in_sentence)
-        with open(os.path.join(svg_from_out, cap_name), 'w+') as f:
-            f.write(out_doc.toxml())
-        #conver and save as bitmap
-        svg_out_path = svg_from_out + cap_name
-        bitmap_out_path = bitmap_from_out + fname
-        cairosvg.svg2png(url=svg_out_path, write_to=bitmap_out_path)
+            #convert and save as bitmap 
+            svg_path = svg_from_trg + cap_name
+            bitmap_path = bitmap_from_trg + fname
+            cairosvg.svg2png(url=svg_path, write_to=bitmap_path)
+            print(cnt)
 
-        print(cap_name)
+            print(cap_name)
 
-
-
+            #generate svg from output caption
+            out_doc = gen_svg_conv2bitmap(in_sentence)
+            with open(os.path.join(svg_from_out, cap_name), 'w+') as f:
+                f.write(out_doc.toxml())
+            #conver and save as bitmap
+            svg_out_path = svg_from_out + cap_name
+            bitmap_out_path = bitmap_from_out + fname
+            cairosvg.svg2png(url=svg_out_path, write_to=bitmap_out_path)
+        except:
+            continue
 
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--encoder_path', type=str, default='./models/attn/nobject/encoder-15-500.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/attn/nobject2/encoder-5-1500.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/attn/nobject/decoder-15-500.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/attn/nobject2/decoder-5-1500.pkl',
                         help='path for trained decoder')
-    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocabn.pkl',
+    parser.add_argument('--vocab_path', type=str, default='./data/attn/nvocab2.pkl',
                         help='path for vocabulary wrapper')
     parser.add_argument('--root_path', type=str, default='data/nobject_test/',
                         help='path for root')
