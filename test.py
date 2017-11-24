@@ -1,19 +1,15 @@
 import torch
-import matplotlib.pyplot as plt
 import argparse
 import pickle 
 from torch.autograd import Variable 
 from torchvision import transforms 
-from data_loader import build_vocab 
-from model import EncoderCNN, DecoderRNN
-from model import ResNet, ResidualBlock
 from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
 from PIL import Image
 import os 
 from xml.dom import minidom
 import cairosvg
 from SAN_model import SANDecoder
-
+from utils.gen_bitmap_caption_piechart import PieChartGenerator
 
 
 def to_var(x, volatile=False):
@@ -118,6 +114,8 @@ def gen_svg_conv2bitmap(trg_caption):
 
 
 def main(args):
+
+    PIEGEN = PieChartGenerator()
     # Image preprocessing
     transform = transforms.Compose([ 
         transforms.ToTensor(), 
@@ -169,8 +167,7 @@ def main(args):
     cnt = 0
     for fname in test_list: 
         #if cnt >2:
-         #   break;
-        cnt +=1 
+        #    break;
         #load image 
         try:
             test_path = trg_bitmap_dir + fname
@@ -180,46 +177,61 @@ def main(args):
             #gen caption and write to file 
             in_sentence = gen_caption_from_image(image_tensor, encoder, decoder, vocab)
             with open(os.path.join(out_cap_dir, fname), 'w+') as f:
-                f.write(in_sentence)
+                f.write(in_sentence)        
+            cap_name = fname.replace('.png', '.svg')  
 
-            #generate svg from trg_caption, convert to bitmap 
-            cap_name = fname.replace('.png', '.svg')
-            with open(os.path.join(trg_cap_dir, cap_name), 'r') as f:
-                trg_caption = f.read()
-            doc = gen_svg_conv2bitmap(trg_caption)
-            #write svg 
-            with open(os.path.join(svg_from_trg, cap_name), 'w+') as f:
-                f.write(doc.toxml())
+            if args.image_type == 'polygon':
+                #generate svg from trg_caption, convert to bitmap 
+                with open(os.path.join(trg_cap_dir, cap_name), 'r') as f:
+                    trg_caption = f.read()
+                doc = gen_svg_conv2bitmap(trg_caption)
+                #write svg 
+                with open(os.path.join(svg_from_trg, cap_name), 'w+') as f:
+                    f.write(doc.toxml())
 
-            #convert and save as bitmap 
-            svg_path = svg_from_trg + cap_name
-            bitmap_path = bitmap_from_trg + fname
-            cairosvg.svg2png(url=svg_path, write_to=bitmap_path)
+                #convert and save as bitmap 
+                svg_path = svg_from_trg + cap_name
+                bitmap_path = bitmap_from_trg + fname
+                cairosvg.svg2png(url=svg_path, write_to=bitmap_path)
+                print(cap_name)
+
+                #generate svg from output caption
+                out_doc = gen_svg_conv2bitmap(in_sentence)
+                with open(os.path.join(svg_from_out, cap_name), 'w+') as f:
+                    f.write(out_doc.toxml())
+                #conver and save as bitmap
+                svg_out_path = svg_from_out + cap_name
+                bitmap_out_path = bitmap_from_out + fname
+                cairosvg.svg2png(url=svg_out_path, write_to=bitmap_out_path)
+
+            elif args.image_type == 'pie':
+                print(cap_name)
+                #gen pie_svg from trg caption
+                out_doc = PIEGEN.gen_svg_pie_chart_from_caption(in_sentence)
+                with open(os.path.join(svg_from_out, cap_name), 'w+') as f:
+                    f.write(out_doc.toxml())
+                #conver and save as bitmap
+                svg_out_path = svg_from_out + cap_name
+                bitmap_out_path = bitmap_from_out + fname
+                cairosvg.svg2png(url=svg_out_path, write_to=bitmap_out_path)
+
+            cnt +=1  
             print(cnt)
-
-            print(cap_name)
-
-            #generate svg from output caption
-            out_doc = gen_svg_conv2bitmap(in_sentence)
-            with open(os.path.join(svg_from_out, cap_name), 'w+') as f:
-                f.write(out_doc.toxml())
-            #conver and save as bitmap
-            svg_out_path = svg_from_out + cap_name
-            bitmap_out_path = bitmap_from_out + fname
-            cairosvg.svg2png(url=svg_out_path, write_to=bitmap_out_path)
+      
         except:
             continue
 
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--encoder_path', type=str, default='./models/attn/nobject2/encoder-5-1500.pkl',
+    parser.add_argument('--image_type', type=str, help='image type')
+    parser.add_argument('--encoder_path', type=str, default='./models/pie/encoder-20-150.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/attn/nobject2/decoder-5-1500.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/pie/decoder-20-150.pkl',
                         help='path for trained decoder')
-    parser.add_argument('--vocab_path', type=str, default='./data/attn/nvocab2.pkl',
+    parser.add_argument('--vocab_path', type=str, default='./data/pie.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='data/nobject_test/',
+    parser.add_argument('--root_path', type=str, default='data/piechart_test/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)
