@@ -39,11 +39,16 @@ def pos_classifier_2D(pos_x, pos_y):
     pos_x = pos_x//50 + 1 
     pos_y = pos_y//50 + 1
 
+    if pos_x > 10:
+        pos_x = 10 
+    if pos_y > 10: 
+        pos_y = 10 
+
     return str(pos_x), str(pos_y)
 
 def get_color(hsl):
     hsl = int(hsl)
-    color_list = ['red', 'orange', 'yellow', 'lime', 'green', 'spring_green', 'cyan', 'skyblue','blue', 'purple', 'pink', 'deep_pink']
+    color_list = ['red', 'orange', 'yellow', 'lime', 'green', 'spring_green', 'cyan', 'skyblue','blue', 'purple', 'pink', 'deep_pink' ,'red']
     return color_list[hsl//30]
 
 def parse_attribute(pos, polygon, attr_list):
@@ -89,7 +94,7 @@ def parse_attribute_type2(polygon, attr_list):
     attr_list.append(shape)
     
     style = polygon.getAttribute('style') 
-    style = style.replace("fill: hsl(","").split('.')[0]   
+    style = style.replace("fill: hsl(","").split(',')[0]   
     style = get_color(style)      
     
     if shape == 'circle':
@@ -123,8 +128,6 @@ def parse_attribute_type2(polygon, attr_list):
         attr_list.append(style)
 
 
-    style = polygon.getAttribute('style') 
-    style = style.replace("fill: hsl(","").split('.')[0]       
     #attr_list.append(style)
 
     #print(attr_list)
@@ -174,11 +177,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--caption_path', type=str, 
-                        default='data/circle_and_rect_1k/caption', 
+                        default='../data/nobject/caption', 
                         help='path for train annotation file')
 
     parser.add_argument('--svg_path', type=str, 
-                        default='data/circle_and_rect_1k/svg', 
+                        default='../data/nobject/svg', 
                         help='ath for train annotation file')
 
     args = parser.parse_args()

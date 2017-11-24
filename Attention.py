@@ -8,7 +8,7 @@ class Attn(nn.Module):
 
 	Input: de_hidden, en_out
 	    -de_hidden: 1, batch, hidden_dimensions
-	    -en_out: batch, depth, img_feature_d  
+	    -en_out: batch, spatial_size, img_feature_d  
 	Output: context, attn
 		-context: batch, output_len, dimensions 
 		-attn: batch, output_len, dimensions 
@@ -28,10 +28,14 @@ class Attn(nn.Module):
 
 	def forward(self, de_hidden, en_out):
 
-		de_hidden = self.attn(de_hidden.squeeze(0))  # batch, feature_size
-		de_hidden = de_hidden.unsqueeze(2)         #batch, feature_size, 1 
-		attn_weight = torch.bmm(en_out, de_hidden)   #batch, depth, 1 
-		attn_weight = F.softmax(attn_weight)
+		if de_hidden.size(2) == self.hidden_size:
+			de_hidden = self.attn(de_hidden.squeeze(0))  # batch, feature_size
+
+		en_out = en_out.transpose(2,1)             # batch, img_feature_d, spatial_size
+		de_hidden = de_hidden.unsqueeze(2)         #batch, spatial_size, 1 
+		attn_weight = torch.bmm(en_out, de_hidden)   #batch, feature_size, 1 
+		attn_weight = attn_weight.squeeze(2)
+		attn_weight = F.softmax(attn_weight).unsqueeze(2)
 		context = torch.bmm(attn_weight.transpose(2,1),en_out) #batch, 1, feature_size
 
 		return context

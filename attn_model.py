@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.autograd import Variable
 from Attention import Attn
+import torch.nn.functional as F
 
 # 3x3 Convolution
 def conv3x3(in_channels, out_channels, stride=1):
@@ -79,45 +79,107 @@ class AttnEncoder(nn.Module):
 
 
 class AttnDecoderRnn(nn.Module):
-    def __init__(self,  feature_size, hidden_size, vocab_size, num_layers, dropout_p):
+    def __init__(self,  feature_size, hidden_size, vocab_size, num_layers):
         super(AttnDecoderRnn, self).__init__()
         #Define parameters
 
         #Define layers
-        self.embed = nn.Embedding(vocab_size, hidden_size)
+        self.embed = nn.Embedding(vocab_size, feature_size)
+        self.init_layer = nn.Linear(feature_size, hidden_size)
         self.attn = Attn('general', feature_size, hidden_size)
-        self.lstm = nn.LSTM(vocab_size, hidden_size, batch_first=True)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
         self.ctx2out = nn.Linear(feature_size, feature_size)
         self.h2out = nn.Linear(hidden_size, feature_size)
         self.out = nn.Linear(feature_size, vocab_size)
+        self.out_cat = nn.Linear(feature_size*3, vocab_size)
     
-    def decode_lstm(self, input_word, context, hidden):
+    def decode_lstm(self, input_word, context, hidden, lstm_out):
 
-        context = context.squeeze(1)
-        out = self.ctx2out(context)
-        out += input_word
         hidden = hidden.squeeze(0)
-        out += self.h2out(hidden)
+        out = self.h2out(hidden)
+        context = context.squeeze(1)
+        out += self.ctx2out(context)
+        out += input_word
+        out = F.tanh(out)
         out = self.out(out)
 
+        
+        # hidden = hidden.squeeze(0)
+        # out = self.h2out(hidden)
+        # context = context.squeeze(1)
+        # out1 = self.ctx2out(context)
+        # out = torch.cat((out, out1, input_word),1)
+        # out = F.tanh(out)
+        # out = self.out_cat(out)
+
+       
         return out
 
-    def forward(self, features, captions, lengths, en_out):
+    def init_lstm(self, features):
+
+        sums = torch.sum(features, 2)
+        out = torch.mul(sums, 1/features.size(2))
+        out = out.squeeze(2).unsqueeze(0) # 1, batch, feature_size
+        out = self.init_layer(out.squeeze(0)).unsqueeze(0)
+        out = F.tanh(out)
+
+        return out, out 
+
+
+    def forward(self, features, captions, lengths):
 
         max_length = max(lengths)
-        embed = nn.Embedding(captions)
-        h, c= None
+        embed = self.embed(captions)
+        h, c= self.init_lstm(features)
         arr = [] 
 
-        for i in range(max_length):
-            context = self.attn(h, features)
-            lstm_input = torch.cat((context, embed[:,i].unsqueeze(1)),1)
-            _, (h,c) = self.lstm(lstm_input, (h,c))
-            input_word = embed[:,i]
-            out = self.out(input_word,context, h).unsqueeze(1)
+        for i in range(max_length):            
+            if i == 0 :
+                input_word = Variable(torch.zeros(embed.size(0), embed.size(2))).cuda()
+            else: 
+                input_word = embed[:,i-1]
+            context = self.attn(h, features)           
+            #input_word  = embed[:,i]
+            lstm_input = torch.cat((context, input_word.unsqueeze(1)),2)
+            lstm_out, (h,c) = self.lstm(lstm_input, (h,c))
+            out = self.decode_lstm(input_word,context, h, lstm_out).unsqueeze(1)
+            #out = F.softmax(out)
             arr += [out]
 
         return torch.cat(arr,1)
+
+    def sample(self, features):
+        """Samples captions for given image features (Greedy search)."""
+        sampled_ids = []
+        h,c = self.init_lstm(features)
+
+        for i in range(40):                                      # maximum sampling length
+            if i == 0:
+                #word_init = Variable(torch.LongTensor([1])).cuda()
+                #x = self.embed(word_init).unsqueeze(1)
+                x = Variable(torch.rand(1,1,128)).cuda()
+                #sampled_ids.append(word_init)
+            else: 
+                x = self.embed((predicted))
+
+            context = self.attn(h, features)
+            lstm_input = torch.cat((context, x) ,2)
+            lstm_out, (h,c) = self.lstm(lstm_input, (h,c))          # (batch_size, 1, hidden_size), 
+            out = self.decode_lstm(x, context, h, lstm_out)
+            # hidden = lstm_out.squeeze(0)
+            # out = self.h2out(hidden)
+            # context = context.squeeze(1)
+            # out += self.ctx2out(context)
+            # out += x
+            # out = F.tanh(out)
+            # out = self.out(out)
+            predicted = out.max(1)[1]
+            #print(predicted)
+            sampled_ids.append(predicted)
+        #print(sampled_ids)
+        #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
+        return sampled_ids
+
 
 
 
