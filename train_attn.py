@@ -137,17 +137,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/attn/3object/' ,
+    parser.add_argument('--model_path', type=str, default='./models/barchart/' ,
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/3object/',
+    parser.add_argument('--root_path', type=str, default='data/barchart/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
     parser.add_argument('--save_step', type=int , default=150,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/attn/vocab3.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/barchart.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=128 ,
