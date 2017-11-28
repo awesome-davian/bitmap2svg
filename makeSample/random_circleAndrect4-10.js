@@ -2,15 +2,13 @@
 var NUM_FILE = parseInt(process.argv[2]);
 var chartWidth = 500, chartHeight = 500;
 
-
 var fs = require('fs');
 var d3 = require('d3');
 var jsdom = require('jsdom');
 var svg_to_png = require('svg-to-png');
 var path = require('path')
 
-
-var color = d3.scale.category10();
+//var color = d3.scale.category10();
 
 var dir = path.join(__dirname, 'svg');
 if (!fs.existsSync(dir)) {
