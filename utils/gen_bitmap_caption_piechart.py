@@ -22,7 +22,8 @@ class PieChartGenerator():
 
         caption_arr = caption.split(' ')
         radius = caption_arr[1]
-        caption_arr = caption_arr[2:]
+        start_rotation = caption_arr[2]
+        caption_arr = caption_arr[3:]
         portion_arr = [] 
         color_arr = [] 
         for idx, element in enumerate(caption_arr):
@@ -31,7 +32,7 @@ class PieChartGenerator():
             elif idx % 3 ==2 :
                 color_arr.append(element)
 
-        return int(radius), portion_arr, color_arr
+        return int(radius), int(start_rotation), portion_arr, color_arr
 
 
 
@@ -48,9 +49,9 @@ class PieChartGenerator():
         g.setAttribute("transform", "translate(10,10)")
         svg.appendChild(g)
 
-        radius, portion_arr, color_arr = self.caption_parser(caption)
+        radius, start_rotation, portion_arr, color_arr = self.caption_parser(caption)
 
-        sectors = self.calculateSectors(portion_arr, color_arr, radius)
+        sectors = self.calculateSectors(portion_arr, color_arr, radius, start_rotation)
         for sector in sectors:
             arc = self.make_arc(doc, sector)
             g.appendChild(arc)
@@ -75,7 +76,7 @@ class PieChartGenerator():
         portion =  np.random.random_integers(1, 10, num_element)
         portion = np.around(portion* 1/np.sum(portion), decimals =2)
         portion[-1] += 1- np.sum(portion)
-        
+      
         # calculate sectors
         sectors = self.calculateSectors(portion)
 
@@ -87,6 +88,7 @@ class PieChartGenerator():
             if idx == 0:
                 caption.append('piechart')
                 caption.append(sector['radius'])
+                caption.append(sector['rotation'])
                 caption = self.get_caption(sector, caption)
             else:
                 caption = self.get_caption(sector, caption)
@@ -115,7 +117,7 @@ class PieChartGenerator():
 
         return arc 
 
-    def calculateSectors(self, portion, color_arr=None, radius=None):
+    def calculateSectors(self, portion, color_arr=None, radius=None, start_rotation=None):
 
         sectors = []
         if radius is None:
@@ -125,10 +127,17 @@ class PieChartGenerator():
                     'blue', 'mediumblue', 'purple', 'pink', 'deeppink']
             color_arr = np.random.choice(svg_color, len(portion), replace=False)
 
-        label_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
-        label_arr = np.random.choice(label_char, len(portion),  replace=False)
+        label_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
+        try: 
+            label_arr = np.random.choice(label_char, len(portion),  replace=False)
+        except:
+            print(len(portion))
+            print(portion)
 
-        rotation = 0 
+        if start_rotation is None:
+            start_rotation = random.randrange(0,10)
+
+        rotation = start_rotation
         for idx, element in enumerate(portion):
             a = 360 * element
             x = 0.0
@@ -177,7 +186,7 @@ def main():
 
     PIEGEN = PieChartGenerator()
 
-    root_path = '../data/piechart_test/'
+    root_path = '../data/piechart2/'
     trg_bitmap_dir = root_path + 'bitmap/'
     trg_svg_dir = root_path + 'svg/'
     trg_caption_dir = root_path + 'caption'
@@ -192,10 +201,10 @@ def main():
     if not os.path.exists(trg_caption_dir):
         os.makedirs(trg_caption_dir)
 
-    for i in range(1000):
+    for i in range(100000):
 
         try:
-            if i%100 == 0:
+            if i%1000 == 0:
                 print(i) 
 
 

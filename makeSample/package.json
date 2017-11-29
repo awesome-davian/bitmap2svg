@@ -9,8 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "d3": "^3.5.17",
-    "jsdom": "^9.12.0",
+    "d3": "^3.5.5",
+    "jsdom": "^3.1.2",
     "svg-to-png": "^3.1.2"
   }
 }
