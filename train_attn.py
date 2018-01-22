@@ -5,7 +5,7 @@ import numpy as np
 import os
 from data_loader import build_vocab, get_loader
 from model import ResNet, ResidualBlock
-from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
+from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn, EncoderCNN
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
@@ -53,6 +53,7 @@ def main(args):
                              shuffle=True, num_workers=args.num_workers) 
 
     # Build the attn models
+    #encoder = EncoderCNN(args.embed_size)
     encoder = AttnEncoder(ResidualBlock, [3, 3, 3])
     decoder = AttnDecoderRnn(args.feature_size, args.hidden_size, 
                          len(vocab), args.num_layers)
@@ -73,11 +74,8 @@ def main(args):
     for epoch in range(args.num_epochs):
         for i, (images, captions, lengths) in enumerate(data_loader):
 
-            #if i > 1 : 
-             # break;
-
             # to variable 
-            images = to_var(images)  
+            images = to_var(images) 
             captions = to_var(captions)
             
             # Forward, Backward and Optimize
@@ -101,7 +99,7 @@ def main(args):
 
                 #test set accuracy 
                 #print(outputs.view(args.batch_size,-1))
-                print(outputs.max(1)[1].view(args.batch_size, -1))
+                #print(outputs.max(1)[1].view(args.batch_size, -1))
                 outputs_np = outputs.max(1)[1].cpu().data.numpy()
                 targets_np = captions.cpu().data.numpy()
 
@@ -137,17 +135,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/barchart/' ,
+    parser.add_argument('--model_path', type=str, default='./models/polygon_n/' ,
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/barchart/',
+    parser.add_argument('--root_path', type=str, default='dataset/polygon_n/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
-    parser.add_argument('--save_step', type=int , default=150,
+    parser.add_argument('--save_step', type=int , default=780,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/barchart.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/polygon_n.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=128 ,
@@ -159,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_layers', type=int , default=1 ,
                         help='number of layers in lstm')
     
-    parser.add_argument('--num_epochs', type=int, default=20)
+    parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)
