@@ -70,6 +70,8 @@ def parse_predict_sentence(predict):
 			data_arr.append(predict_caption[1:6])
 			rgb_arr.append(predict_caption[6:9])
 			predict_caption = predict_caption[9:]
+		else:
+			predict_caption = predict_caption[1:]
 
 	return data_arr, class_arr, rgb_arr		
 
@@ -196,7 +198,7 @@ def main(args):
 
 
     trg_bitmap_dir = args.root_path + 'bitmap/'
-    save_directory = 'predict/'
+    save_directory = 'predict_caption/'
     svg_from_out = args.root_path + save_directory + 'svg/'   # svg from output caption 
     bitmap_from_out = args.root_path + save_directory + 'bitmap/'   #bitmap from out caption 
 
@@ -222,13 +224,13 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--encoder_path', type=str, default='./models/polygon_n/encoder-60-780.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/polygon_n/encoder-100-780.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/polygon_n/decoder-60-780.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/polygon_n/decoder-100-780.pkl',
                         help='path for trained decoder')
     parser.add_argument('--vocab_path', type=str, default='./data/polygon_n.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='dataset/polygon_test/',
+    parser.add_argument('--root_path', type=str, default='dataset/polygon_9/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)
