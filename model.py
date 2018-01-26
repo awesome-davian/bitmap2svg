@@ -60,7 +60,7 @@ class ResidualBlock(nn.Module):
 
 # ResNet Module
 class ResNet(nn.Module):
-    def __init__(self, block, layers, num_classes):
+    def __init__(self, block, layers, embed_size):
         super(ResNet, self).__init__()
         self.in_channels = 32
         self.conv = conv3x3(3, 32)
@@ -70,7 +70,7 @@ class ResNet(nn.Module):
         self.layer2 = self.make_layer(block, 64, layers[0],2)
         self.layer3 = self.make_layer(block, 128, layers[1],2)
         self.avg_pool = nn.AvgPool2d(8)
-        self.fc = nn.Linear(32768, num_classes)
+        self.fc = nn.Linear(32768, embed_size)
         #self.fc2 = nn.Linear(2048, num_classes)
         #self.init_weights()
 
@@ -112,7 +112,7 @@ class DecoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers):
         """Set the hyper-parameters and build the layers."""
         super(DecoderRNN, self).__init__()
-        #self.embed = nn.Embedding(vocab_size, embed_size)
+        self.embed = nn.Embedding(vocab_size, embed_size)
         self.embed_size = embed_size
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
         self.linear = nn.Linear(hidden_size, vocab_size)
@@ -120,13 +120,13 @@ class DecoderRNN(nn.Module):
     
     def init_weights(self):
         """Initialize weights."""
-        #self.embed.weight.data.uniform_(-0.1, 0.1)
+        self.embed.weight.data.uniform_(-0.1, 0.1)
         self.linear.weight.data.uniform_(-0.1, 0.1)
         self.linear.bias.data.fill_(0)
         
     def forward(self, features, captions, lengths):
         """Decode image feature vectors and generates captions."""
-        #embeddings = self.embed(captions)
+        captions = self.embed(captions)
         embeddings = torch.cat((features.unsqueeze(1), captions), 1)
         packed = pack_padded_sequence(embeddings, lengths, batch_first=True) 
         #packed = torch.cat((features.unsqueeze(1), captions),1)
@@ -138,16 +138,13 @@ class DecoderRNN(nn.Module):
         """Samples captions for given image features (Greedy search)."""
         sampled_ids = []
         inputs = features.unsqueeze(1)
-        for i in range(30):                                      # maximum sampling length
+        for i in range(100):                                      # maximum sampling length
             hiddens, states = self.lstm(inputs, states)          # (batch_size, 1, hidden_size), 
             outputs = self.linear(hiddens.squeeze(1))            # (batch_size, vocab_size)
             predicted = outputs.max(1)[1]
             sampled_ids.append(predicted)
-            y_onehot = torch.FloatTensor(1, self.embed_size).zero_()
-            idx = int(predicted[0].cpu().data.numpy())
-            y_onehot[:,idx] = 1
-            inputs = Variable(y_onehot)
-            inputs = inputs.unsqueeze(1).cuda()                    # (batch_size, 1, embed_size)
+            inputs = self.embed(predicted)
+            inputs = inputs.unsqueeze(1)                   # (batch_size, 1, embed_size)
         #print(sampled_ids)
         #sampled_ids = torch.cat(sampled_ids, 1)                  # (batch_size, 20)
         return sampled_ids

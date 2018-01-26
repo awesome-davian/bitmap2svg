@@ -4,8 +4,8 @@ import torch.nn as nn
 import numpy as np
 import os
 from data_loader import build_vocab, get_loader
-from model import DecoderRNN 
-from model import ResNet, ResidualBlock
+from model import DecoderRNN, ResidualBlock, ResNet
+#from attn_model import ResidualBlock, AttnEncoder
 from torch.autograd import Variable 
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
@@ -13,7 +13,7 @@ import pickle
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
-        x = x.cuda()
+        x = x.cuda(1)
     return Variable(x, volatile=volatile)
 
 def rearrange_tensor(x, batch_size, caption_size):
@@ -45,23 +45,21 @@ def main(args):
         pickle.dump(vocab, f)
     len_vocab = vocab.idx
     print(vocab.idx2word)
-    
+
     # Build data loader
     data_loader = get_loader(args.root_path, vocab, 
                              transform, args.batch_size,
                              shuffle=True, num_workers=args.num_workers) 
 
     # Build the models
-    encoder = ResNet(ResidualBlock, [3, 3, 3], len_vocab)
-    decoder = DecoderRNN(len_vocab, args.hidden_size, 
+    encoder = ResNet(ResidualBlock, [3, 3, 3], args.embed_size)
+    decoder = DecoderRNN(args.embed_size, args.hidden_size, 
                          len(vocab), args.num_layers)
 
-    #Build atten models 
-    attn_encoder = ResNet(ResidualBlock, [3,3,3], args.hidden_size)
-    
+    #Build atten models     
     if torch.cuda.is_available():
-            encoder.cuda()
-            decoder.cuda()
+            encoder.cuda(1)
+            decoder.cuda(1)
 
 
     # Loss and Optimizer
@@ -74,28 +72,32 @@ def main(args):
     for epoch in range(args.num_epochs):
         for i, (images, captions, lengths) in enumerate(data_loader):
 
-            #if i > 1 : 
-             #  break;
 
             # make one hot 
-            cap_ = torch.unsqueeze(captions,2)
-            one_hot_ = torch.FloatTensor(captions.size(0),captions.size(1),len_vocab).zero_()
-            one_hot_caption = one_hot_.scatter_(2, cap_, 1)
+            # cap_ = torch.unsqueeze(captions,2)
+            # one_hot_ = torch.FloatTensor(captions.size(0),captions.size(1),len_vocab).zero_()
+            # one_hot_caption = one_hot_.scatter_(2, cap_, 1)
 
             # Set mini-batch dataset
             images = to_var(images)  
             captions = to_var(captions)
-            captions_ = to_var(one_hot_caption)
+            #captions_ = to_var(one_hot_caption)
             
             targets = pack_padded_sequence(captions, lengths, batch_first=True)[0]  
             # Forward, Backward and Optimize
             optimizer.zero_grad()
             features = encoder(images)
-            outputs = decoder(features, captions_, lengths)
+            outputs = decoder(features, captions, lengths)
+
+            captions = captions.view(-1)
+            outputs = outputs.view(-1,len_vocab)
 
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
+
+            #print(targets)
+            #print(outputs)
 
             # Print log info
             if i % args.log_step == 0:
@@ -107,6 +109,9 @@ def main(args):
                 #print(outputs.max(1)[1])
                 outputs_np = outputs.max(1)[1].cpu().data.numpy()
                 targets_np = targets.cpu().data.numpy()
+
+                print(outputs_np)
+                print(targets_np)
 
                 location_match = 0 
                 size_match = 0   
@@ -137,17 +142,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='./models/3object/' ,
+    parser.add_argument('--model_path', type=str, default='./models/cnn_polygon_n/' ,
                         help='path for saving trained models')
     parser.add_argument('--crop_size', type=int, default=128,
                         help='size for randomly cropping images')
-    parser.add_argument('--root_path', type=str, default='data/3object/',
+    parser.add_argument('--root_path', type=str, default='dataset/polygon_n/',
                         help='path for root')
     parser.add_argument('--log_step', type=int , default=10,
                         help='step size for prining log info')
-    parser.add_argument('--save_step', type=int , default=50,
+    parser.add_argument('--save_step', type=int , default=780,
                         help='step size for saving trained models')
-    parser.add_argument('--vocab_path', type=str, default='./data/vocab_3object.pkl', 
+    parser.add_argument('--vocab_path', type=str, default='./data/cnn_polygon_n.pkl', 
                         help='path for saving vocabulary wrapper')
     # Model parameters
     parser.add_argument('--embed_size', type=int , default=256 ,
@@ -157,7 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_layers', type=int , default=1 ,
                         help='number of layers in lstm')
     
-    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.001)

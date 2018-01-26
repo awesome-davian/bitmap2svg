@@ -3,7 +3,8 @@ import argparse
 import pickle 
 from torch.autograd import Variable 
 from torchvision import transforms 
-from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
+#from attn_model import ResidualBlock, AttnEncoder, AttnDecoderRnn
+from model import DecoderRNN, ResNet, ResidualBlock
 from PIL import Image
 import os 
 from xml.dom import minidom
@@ -181,15 +182,21 @@ def main(args):
         vocab = pickle.load(f)
 
     # Build Models
-    encoder = AttnEncoder(ResidualBlock, [3, 3, 3])
+    #encoder = AttnEncoder(ResidualBlock, [3, 3, 3])
+    encoder = ResNet(ResidualBlock, [3, 3, 3], args.embed_size)
     encoder.eval()  # evaluation mode (BN uses moving mean/variance)
-    decoder = AttnDecoderRnn(args.feature_size, args.hidden_size, 
+    # decoder = AttnDecoderRnn(args.feature_size, args.hidden_size, 
+    #                     len(vocab), args.num_layers)
+    decoder = DecoderRNN(args.embed_size, args.hidden_size, 
                          len(vocab), args.num_layers)
 
+    print('load')
 
     # Load the trained model parameters
     encoder.load_state_dict(torch.load(args.encoder_path))
     decoder.load_state_dict(torch.load(args.decoder_path))
+
+    print('load')
 
     # If use gpu
     if torch.cuda.is_available():
@@ -198,7 +205,7 @@ def main(args):
 
 
     trg_bitmap_dir = args.root_path + 'bitmap/'
-    save_directory = 'predict_caption/'
+    save_directory = 'predict_base/'
     svg_from_out = args.root_path + save_directory + 'svg/'   # svg from output caption 
     bitmap_from_out = args.root_path + save_directory + 'bitmap/'   #bitmap from out caption 
 
@@ -224,21 +231,21 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--encoder_path', type=str, default='./models/polygon_n/encoder-100-780.pkl',
+    parser.add_argument('--encoder_path', type=str, default='./models/cnn_polygon_n/encoder-98-780.pkl',
                         help='path for trained encoder')
-    parser.add_argument('--decoder_path', type=str, default='./models/polygon_n/decoder-100-780.pkl',
+    parser.add_argument('--decoder_path', type=str, default='./models/cnn_polygon_n/decoder-98-780.pkl',
                         help='path for trained decoder')
-    parser.add_argument('--vocab_path', type=str, default='./data/polygon_n.pkl',
+    parser.add_argument('--vocab_path', type=str, default='./data/cnn_polygon_n.pkl',
                         help='path for vocabulary wrapper')
-    parser.add_argument('--root_path', type=str, default='dataset/polygon_9/',
+    parser.add_argument('--root_path', type=str, default='dataset/polygon_1/',
                         help='path for root')
     
     # Model parameters (should be same as paramters in train.py)
-    parser.add_argument('--embed_size', type=int , default=128,
+    parser.add_argument('--embed_size', type=int , default=256,
                         help='dimension of word embedding vectors')
     parser.add_argument('--feature_size', type=int , default=128,
                         help='dimension of word embedding vectors')
-    parser.add_argument('--hidden_size', type=int , default=256,
+    parser.add_argument('--hidden_size', type=int , default=512,
                         help='dimension of lstm hidden states')
     parser.add_argument('--num_layers', type=int , default=1 ,
                         help='number of layers in lstm')
